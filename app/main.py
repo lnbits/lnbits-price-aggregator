@@ -2,10 +2,13 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager, suppress
 from datetime import UTC, datetime
+from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 from uvicorn.logging import DefaultFormatter
 
 from app.cache import cache
@@ -89,6 +92,9 @@ app = FastAPI(
     openapi_tags=_TAGS,
     lifespan=lifespan,
 )
+
+app.add_middleware(GZipMiddleware, minimum_size=500)
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
 
 async def _fetch_and_cache(client: httpx.AsyncClient) -> None:
@@ -294,7 +300,7 @@ def _build_overview(
     col = 13  # price column width
     pair_w = 9
     cols = [
-        "Min", "Median", "Max",
+        "Median", "Min", "Max",
         "Coinbase", "Kraken", "Bitfinex", "Bitstamp", "Binance", "Coinmate", "Gemini",
     ]
     header_row = f"  {'Pair':<{pair_w}}" + "".join(f"  {h:>{col}}" for h in cols)
@@ -310,8 +316,8 @@ def _build_overview(
         rates = ExchangeRates(**ex)
         rows.append(
             f"  {'BTC/' + currency:<{pair_w}}"
-            f"  {_fmt(rates.min,      col)}"
             f"  {_fmt(rates.median,   col)}"
+            f"  {_fmt(rates.min,      col)}"
             f"  {_fmt(rates.max,      col)}"
             f"  {_fmt(ex['coinbase'], col)}"
             f"  {_fmt(ex['kraken'],   col)}"
@@ -325,7 +331,7 @@ def _build_overview(
     footer = (
         f"  updated {ago_str}"
         f"  ·  refreshes every {settings.fetch_interval_seconds}s"
-        f"  ·  /rates JSON  ·  /docs API"
+        f"  ·  / web  ·  /rates JSON  ·  /docs API"
     )
 
     lines = [
@@ -344,7 +350,12 @@ def _build_overview(
 
 
 @app.get("/", include_in_schema=False)
-async def overview() -> PlainTextResponse:
+async def index() -> FileResponse:
+    return FileResponse(Path(__file__).parent / "static" / "index.html")
+
+
+@app.get("/curl", include_in_schema=False)
+async def curl_overview() -> PlainTextResponse:
     data, last_updated = await cache.snapshot()
     if not data:
         return PlainTextResponse("LNbits Price Aggregator — fetching prices, please wait...\n")

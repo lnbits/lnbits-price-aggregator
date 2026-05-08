@@ -11,6 +11,17 @@ class ExchangeRates(BaseModel):
     _null_desc = "`null` if the pair is unlisted or no price has been received since startup."
     _stat_null = "`null` if no exchange returned data."
 
+    median: Annotated[
+        float | None,
+        Field(
+            default=None,
+            description=(
+                "Median price across all exchanges that returned data. "
+                f"With two sources this equals their mean. {_stat_null}"
+            ),
+            json_schema_extra={"readOnly": True},
+        ),
+    ]
     min: Annotated[
         float | None,
         Field(
@@ -24,17 +35,6 @@ class ExchangeRates(BaseModel):
         Field(
             default=None,
             description=f"Highest price across all exchanges that returned data. {_stat_null}",
-            json_schema_extra={"readOnly": True},
-        ),
-    ]
-    median: Annotated[
-        float | None,
-        Field(
-            default=None,
-            description=(
-                "Median price across all exchanges that returned data. "
-                f"With two sources this equals their mean. {_stat_null}"
-            ),
             json_schema_extra={"readOnly": True},
         ),
     ]

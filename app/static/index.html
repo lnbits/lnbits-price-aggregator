@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LNbits Price Aggregator</title>
+  <link rel="icon" href="/static/lnbits.png">
+  <link rel="apple-touch-icon" href="/static/lnbits.png">
+  <style>
+    :root {
+      --pink:   #ff1ee6;
+      --purple: #7b2cff;
+      --cyan:   #27d7ff;
+      --bg:     #0a0b12;
+      --panel:  rgba(12, 14, 24, 0.90);
+      --border: rgba(255, 255, 255, 0.08);
+      --text:   #f0f3ff;
+      --muted:  #8892aa;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 60% 50% at 10% 60%, rgba(123,44,255,.15) 0%, transparent 100%),
+        radial-gradient(ellipse 50% 40% at 85% 15%, rgba(255,30,230,.10) 0%, transparent 100%),
+        radial-gradient(ellipse 40% 40% at 60% 85%, rgba(39,215,255,.08) 0%, transparent 100%);
+    }
+
+    /* ── Header ── */
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(7, 8, 14, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: .85rem 1.75rem;
+      display: flex; align-items: center; gap: .85rem;
+    }
+    header img { height: 26px; }
+    header .title { font-size: .95rem; font-weight: 600; color: var(--text); }
+
+    /* ── Layout ── */
+    main {
+      max-width: 1280px; margin: 0 auto;
+      padding: 2rem 1.25rem;
+      display: flex; flex-direction: column; gap: 1.5rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.4rem 1.5rem;
+    }
+    .card-title {
+      font-size: .68rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--muted); margin-bottom: 1.1rem;
+    }
+
+    /* ── Rates table ── */
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; white-space: nowrap; }
+
+    thead th {
+      padding: .4rem .8rem; text-align: right;
+      font-size: .67rem; font-weight: 500;
+      text-transform: uppercase; letter-spacing: .07em;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+    }
+    thead th:first-child { text-align: left; }
+
+    tbody td {
+      padding: .55rem .8rem; text-align: right;
+      border-bottom: 1px solid var(--border);
+      font-variant-numeric: tabular-nums;
+    }
+    tbody td:first-child { text-align: left; font-weight: 600; letter-spacing: .02em; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(255,255,255,.025); }
+
+    .stat { color: var(--cyan); font-weight: 500; }
+    .null { color: rgba(255,255,255,.18); }
+    .ts { font-size: .72rem; color: var(--muted); margin-top: .85rem; }
+    .ts b { color: var(--cyan); font-weight: 500; }
+
+    /* ── Conversion form ── */
+    .form-row { display: flex; gap: .75rem; flex-wrap: wrap; align-items: flex-end; }
+
+    .field { display: flex; flex-direction: column; gap: .35rem; }
+
+    label {
+      font-size: .67rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .09em; color: var(--muted);
+    }
+
+    input[type=number], select {
+      background: rgba(255,255,255,.055);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit; font-size: .9rem;
+      padding: .55rem .85rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input[type=number] {
+      appearance: none;
+      -moz-appearance: textfield;
+      width: 145px;
+    }
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      cursor: pointer; min-width: 100px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238892aa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right .75rem center;
+      padding-right: 2rem;
+    }
+    input[type=number]:focus, select:focus { border-color: var(--pink); }
+    select option { background: #141520; }
+
+    .btn {
+      background: linear-gradient(135deg, var(--pink) 0%, var(--purple) 100%);
+      border: none; border-radius: 8px;
+      color: #fff; cursor: pointer;
+      font-family: inherit; font-size: .9rem; font-weight: 600;
+      padding: .56rem 1.5rem;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .35; cursor: default; transform: none; }
+
+    /* ── Result ── */
+    .result {
+      display: none; margin-top: 1.25rem;
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      background: rgba(39,215,255,.05);
+      border: 1px solid rgba(39,215,255,.2);
+    }
+    .result.err {
+      background: rgba(255,30,230,.05);
+      border-color: rgba(255,30,230,.25);
+    }
+    .result-sats { font-size: 1.8rem; font-weight: 700; color: var(--cyan); line-height: 1; }
+    .result-sats .unit { font-size: 1rem; font-weight: 400; margin-left: .35rem; color: var(--muted); }
+    .result.err .result-sats { font-size: 1rem; color: var(--pink); }
+    .result.err .result-sats .unit { display: none; }
+    .result-sub { font-size: .78rem; color: var(--muted); margin-top: .45rem; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.75rem 1.75rem 2rem;
+      text-align: center;
+    }
+    .footer-links {
+      display: flex; flex-wrap: wrap; gap: .4rem 1.4rem;
+      justify-content: center; margin-bottom: .85rem;
+    }
+    .footer-links a {
+      color: var(--muted); font-size: .82rem;
+      text-decoration: none; transition: color .15s;
+    }
+    .footer-links a:hover { color: var(--text); }
+    .footer-copy { font-size: .7rem; color: rgba(255,255,255,.22); }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="https://lnbits.com/assets/images/logo/logo.svg" alt="LNbits"
+       onerror="this.style.display='none'">
+  <span class="title">Price Aggregator</span>
+</header>
+
+<main>
+  <!-- Rates table -->
+  <div class="card">
+    <div class="card-title">BTC Prices</div>
+    <div class="table-scroll" id="table-wrap">
+      <p style="color:var(--muted);font-size:.85rem;padding:.5rem 0">Loading…</p>
+    </div>
+    <div class="ts" id="ts-line"></div>
+  </div>
+
+  <!-- Converter -->
+  <div class="card">
+    <div class="card-title">Convert to Satoshis</div>
+    <div class="form-row">
+      <div class="field">
+        <label for="amt">Amount</label>
+        <input id="amt" type="number" placeholder="500" min="0" step="any">
+      </div>
+      <div class="field">
+        <label for="cur">Currency</label>
+        <select id="cur"></select>
+      </div>
+      <div class="field" style="justify-content:flex-end">
+        <button class="btn" id="cvt-btn" onclick="doConvert()">Convert</button>
+      </div>
+    </div>
+    <div class="result" id="result">
+      <div class="result-sats" id="res-sats">
+        <span id="res-num"></span><span class="unit">sats</span>
+      </div>
+      <div class="result-sub" id="res-sub"></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-links">
+    <a href="https://news.lnbits.com" target="_blank" rel="noopener">News</a>
+    <a href="https://shop.lnbits.com" target="_blank" rel="noopener">Shop</a>
+    <a href="https://my.lnbits.com" target="_blank" rel="noopener">SaaS</a>
+    <a href="https://docs.lnbits.com" target="_blank" rel="noopener">Docs</a>
+    <a href="https://t.me/lnbits" target="_blank" rel="noopener">Telegram</a>
+    <a href="https://community.lnbits.com" target="_blank" rel="noopener">Forum</a>
+    <a href="https://github.com/lnbits" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <div class="footer-copy">Released under the MIT License &middot; Copyright 2018-present LNbits Contributors</div>
+</footer>
+
+<script>
+  const N2  = new Intl.NumberFormat('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const NI  = new Intl.NumberFormat('en-US');
+  const EXCHANGES = ['coinbase','kraken','bitfinex','bitstamp','binance','coinmate','gemini'];
+  const EX_HDR    = ['Coinbase','Kraken','Bitfinex','Bitstamp','Binance','Coinmate','Gemini'];
+
+  function fmtCell(v, cls) {
+    if (v == null) return `<td><span class="null">—</span></td>`;
+    const s = N2.format(v);
+    return cls ? `<td class="${cls}">${s}</td>` : `<td>${s}</td>`;
+  }
+
+  function renderTable(data) {
+    let h = '<table><thead><tr><th>Pair</th>'
+          + '<th>Median</th><th>Min</th><th>Max</th>';
+    for (const l of EX_HDR) h += `<th>${l}</th>`;
+    h += '</tr></thead><tbody>';
+    for (const [cur, ex] of Object.entries(data.rates)) {
+      h += `<tr><td>BTC/${cur}</td>`;
+      h += fmtCell(ex.median, 'stat') + fmtCell(ex.min, 'stat') + fmtCell(ex.max, 'stat');
+      for (const e of EXCHANGES) h += fmtCell(ex[e]);
+      h += '</tr>';
+    }
+    h += '</tbody></table>';
+    document.getElementById('table-wrap').innerHTML = h;
+  }
+
+  function populateCurrencies(data) {
+    const sel = document.getElementById('cur');
+    const prev = sel.value;
+    sel.innerHTML = '';
+    for (const c of Object.keys(data.rates)) {
+      const o = document.createElement('option');
+      o.value = o.textContent = c;
+      if (c === prev) o.selected = true;
+      sel.appendChild(o);
+    }
+  }
+
+  async function loadRates() {
+    try {
+      const r = await fetch('/rates');
+      if (!r.ok) {
+        document.getElementById('ts-line').textContent = 'Waiting for first fetch…';
+        return;
+      }
+      const data = await r.json();
+      renderTable(data);
+      populateCurrencies(data);
+      const ts = new Date(data.timestamp).toLocaleTimeString();
+      document.getElementById('ts-line').innerHTML =
+        `Updated <b>${ts}</b> · refreshes every 60s`;
+    } catch {
+      document.getElementById('ts-line').textContent = 'Connection error';
+    }
+  }
+
+  async function doConvert() {
+    const amount   = document.getElementById('amt').value;
+    const currency = document.getElementById('cur').value;
+    if (!amount || +amount <= 0 || !currency) return;
+
+    const btn = document.getElementById('cvt-btn');
+    const res = document.getElementById('result');
+    btn.disabled = true;
+    res.style.display = 'none';
+
+    try {
+      const r    = await fetch(`/rate/${currency}/${amount}`);
+      const data = await r.json();
+      if (r.ok) {
+        res.className = 'result';
+        document.getElementById('res-num').textContent  = NI.format(data.sats);
+        document.getElementById('res-sub').textContent  =
+          `${N2.format(+amount)} ${currency}  ·  1 BTC = ${N2.format(data.rate)} ${currency}`;
+      } else {
+        res.className = 'result err';
+        document.getElementById('res-sats').textContent = data.detail || 'Error';
+        document.getElementById('res-sub').textContent  = '';
+      }
+    } catch {
+      res.className = 'result err';
+      document.getElementById('res-sats').textContent = 'Request failed';
+      document.getElementById('res-sub').textContent  = '';
+    }
+
+    res.style.display = 'block';
+    btn.disabled = false;
+  }
+
+  document.getElementById('amt').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doConvert();
+  });
+
+  loadRates();
+  setInterval(loadRates, 60000);
+</script>
+</body>
+</html>
