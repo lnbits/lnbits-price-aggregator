@@ -1,0 +1,58 @@
+{
+  "timeout": 5.0,
+  "coinbase": {
+    "enabled": true,
+    "url": "https://api.exchange.coinbase.com",
+    "timeout": 8.0
+  },
+  "kraken": {
+    "enabled": true,
+    "url": "https://api.kraken.com",
+    "timeout": 5.0,
+    "suffixes": {
+      "USD": ["ZUSD", "USD"],
+      "EUR": ["ZEUR", "EUR"],
+      "CHF": ["CHF"],
+      "GBP": ["ZGBP", "GBP"],
+      "JPY": ["ZJPY", "JPY"],
+      "AUD": ["ZAUD", "AUD"],
+      "CAD": ["ZCAD", "CAD"]
+    }
+  },
+  "bitfinex": {
+    "enabled": true,
+    "url": "https://api-pub.bitfinex.com",
+    "timeout": 5.0,
+    "currencies": ["USD", "EUR", "CHF", "GBP"]
+  },
+  "bitstamp": {
+    "enabled": true,
+    "url": "https://www.bitstamp.net",
+    "timeout": 5.0,
+    "currencies": ["USD", "EUR", "GBP"]
+  },
+  "binance": {
+    "enabled": true,
+    "url": "https://api.binance.com",
+    "timeout": 5.0,
+    "pairs": {
+      "USD": "BTCUSDT",
+      "EUR": "BTCEUR"
+    }
+  },
+  "coinmate": {
+    "enabled": true,
+    "url": "https://coinmate.io",
+    "timeout": 8.0,
+    "pairs": {
+      "EUR": "BTC_EUR",
+      "CZK": "BTC_CZK"
+    }
+  },
+  "gemini": {
+    "enabled": true,
+    "url": "https://api.gemini.com",
+    "timeout": 6.0,
+    "currencies": ["USD", "EUR", "GBP"]
+  }
+}
