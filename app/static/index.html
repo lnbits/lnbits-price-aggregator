@@ -141,6 +141,15 @@
     .btn:active { transform: scale(.97); }
     .btn:disabled { opacity: .35; cursor: default; transform: none; }
 
+    /* ── Bottom grid ── */
+    .bottom-grid {
+      display: grid; gap: 1.5rem;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 760px) {
+      .bottom-grid { grid-template-columns: 1fr 1fr; }
+    }
+
     /* ── Result ── */
     .result {
       display: none; margin-top: 1.25rem;
@@ -153,11 +162,45 @@
       background: rgba(255,30,230,.05);
       border-color: rgba(255,30,230,.25);
     }
+    .result-row { display: flex; align-items: center; gap: .75rem; }
     .result-sats { font-size: 1.8rem; font-weight: 700; color: var(--cyan); line-height: 1; }
     .result-sats .unit { font-size: 1rem; font-weight: 400; margin-left: .35rem; color: var(--muted); }
     .result.err .result-sats { font-size: 1rem; color: var(--pink); }
     .result.err .result-sats .unit { display: none; }
+    .result.err .copy-btn { display: none; }
     .result-sub { font-size: .78rem; color: var(--muted); margin-top: .45rem; }
+
+    .copy-btn {
+      background: rgba(255,255,255,.07);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer; padding: .3rem .45rem;
+      line-height: 0; transition: background .15s, color .15s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,.12); color: var(--text); }
+    .copy-btn.copied { color: var(--cyan); border-color: rgba(39,215,255,.4); }
+
+    /* ── API reference card ── */
+    .api-desc { font-size: .82rem; color: var(--muted); margin-bottom: 1rem; line-height: 1.5; }
+    .api-endpoints { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.1rem; }
+    .api-endpoints code {
+      font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+      font-size: .8rem; color: var(--cyan);
+      background: rgba(39,215,255,.07);
+      border: 1px solid rgba(39,215,255,.12);
+      border-radius: 6px; padding: .3rem .65rem; display: block;
+    }
+    .api-doc-links { display: flex; gap: .65rem; flex-wrap: wrap; }
+    .api-doc-links a {
+      font-size: .8rem; font-weight: 500;
+      color: var(--muted); text-decoration: none;
+      border: 1px solid var(--border);
+      border-radius: 6px; padding: .3rem .75rem;
+      transition: color .15s, border-color .15s;
+    }
+    .api-doc-links a:hover { color: var(--text); border-color: rgba(255,255,255,.2); }
 
     /* ── Footer ── */
     footer {
@@ -195,27 +238,52 @@
     <div class="ts" id="ts-line"></div>
   </div>
 
-  <!-- Converter -->
-  <div class="card">
-    <div class="card-title">Convert to Satoshis</div>
-    <div class="form-row">
-      <div class="field">
-        <label for="amt">Amount</label>
-        <input id="amt" type="number" placeholder="500" min="0" step="any">
+  <div class="bottom-grid">
+    <!-- Converter -->
+    <div class="card">
+      <div class="card-title">Convert to Satoshis</div>
+      <div class="form-row">
+        <div class="field">
+          <label for="amt">Amount</label>
+          <input id="amt" type="number" placeholder="500" min="0" step="any">
+        </div>
+        <div class="field">
+          <label for="cur">Currency</label>
+          <select id="cur"></select>
+        </div>
+        <div class="field" style="justify-content:flex-end">
+          <button class="btn" id="cvt-btn" onclick="doConvert()">Convert</button>
+        </div>
       </div>
-      <div class="field">
-        <label for="cur">Currency</label>
-        <select id="cur"></select>
-      </div>
-      <div class="field" style="justify-content:flex-end">
-        <button class="btn" id="cvt-btn" onclick="doConvert()">Convert</button>
+      <div class="result" id="result">
+        <div class="result-row">
+          <div class="result-sats" id="res-sats">
+            <span id="res-num"></span><span class="unit">sats</span>
+          </div>
+          <button class="copy-btn" id="copy-btn" onclick="copySats()" title="Copy integer">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+        </div>
+        <div class="result-sub" id="res-sub"></div>
       </div>
     </div>
-    <div class="result" id="result">
-      <div class="result-sats" id="res-sats">
-        <span id="res-num"></span><span class="unit">sats</span>
+
+    <!-- API reference -->
+    <div class="card">
+      <div class="card-title">API Reference</div>
+      <p class="api-desc">JSON API — no authentication required. All endpoints return cached data with sub-millisecond latency.</p>
+      <div class="api-endpoints">
+        <code>GET /rates</code>
+        <code>GET /rate/{currency}</code>
+        <code>GET /rate/{currency}/{amount}</code>
       </div>
-      <div class="result-sub" id="res-sub"></div>
+      <div class="api-doc-links">
+        <a href="/docs">Swagger UI</a>
+        <a href="/redoc">ReDoc</a>
+        <a href="/openapi.json">OpenAPI JSON</a>
+      </div>
     </div>
   </div>
 </main>
@@ -236,6 +304,7 @@
 <script>
   const N2  = new Intl.NumberFormat('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
   const NI  = new Intl.NumberFormat('en-US');
+  let lastSats = null;
   const EXCHANGES = ['coinbase','kraken','bitfinex','bitstamp','binance','coinmate','gemini'];
   const EX_HDR    = ['Coinbase','Kraken','Bitfinex','Bitstamp','Binance','Coinmate','Gemini'];
 
@@ -304,16 +373,19 @@
       const r    = await fetch(`/rate/${currency}/${amount}`);
       const data = await r.json();
       if (r.ok) {
+        lastSats = data.sats;
         res.className = 'result';
         document.getElementById('res-num').textContent  = NI.format(data.sats);
         document.getElementById('res-sub').textContent  =
           `${N2.format(+amount)} ${currency}  ·  1 BTC = ${N2.format(data.rate)} ${currency}`;
       } else {
+        lastSats = null;
         res.className = 'result err';
         document.getElementById('res-sats').textContent = data.detail || 'Error';
         document.getElementById('res-sub').textContent  = '';
       }
     } catch {
+      lastSats = null;
       res.className = 'result err';
       document.getElementById('res-sats').textContent = 'Request failed';
       document.getElementById('res-sub').textContent  = '';
@@ -321,6 +393,19 @@
 
     res.style.display = 'block';
     btn.disabled = false;
+  }
+
+  function copySats() {
+    if (lastSats === null) return;
+    navigator.clipboard.writeText(String(lastSats)).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.classList.add('copied');
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+      }, 1500);
+    });
   }
 
   document.getElementById('amt').addEventListener('keydown', e => {
