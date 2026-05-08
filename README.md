@@ -136,8 +136,8 @@ To enable Docker Hub releases, add these secrets to your GitHub repository:
 
 | Secret | Description |
 |---|---|
-| `DOCKERHUB_USERNAME` | Your Docker Hub username |
-| `DOCKERHUB_TOKEN` | Docker Hub access token (Settings → Security → New Access Token) |
+| `DOCKER_USERNAME` | Your Docker Hub username |
+| `DOCKER_PASSWORD` | Docker Hub access token (Settings → Security → New Access Token) |
 
 Publish a release:
 
