@@ -1,11 +1,13 @@
+from typing import Annotated
+
 from pydantic import field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    currencies: list[str] = ["USD", "EUR", "CHF", "GBP", "CZK"]
+    currencies: Annotated[list[str], NoDecode] = ["USD", "EUR", "CHF", "GBP", "CZK"]
     fetch_interval_seconds: int = 60
 
     @field_validator("currencies", mode="before")
